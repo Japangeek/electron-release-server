@@ -430,8 +430,8 @@ module.exports = {
           var latestYml = "version: " + latestVersion.name
             + "\nfiles:"
             + "\n   - url: " + downloadPath
-            + "\n    sha2: " + sha2
-            + "\n    size: " + asset.size
+            + "\n     sha2: " + sha2
+            + "\n     size: " + asset.size
             + "\nreleaseDate: " + latestVersion.updatedAt
             + "\npath: " + downloadPath
             + "\nsha2: " + sha2;
