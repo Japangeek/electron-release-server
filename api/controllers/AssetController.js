@@ -197,6 +197,7 @@ module.exports = {
         }
 
         var uploadedFile = uploadedFiles[0];
+        var uploadedBlockMap = uploadedFiles[1];
 
         var fileExt = path.extname(uploadedFile.filename);
 
@@ -225,6 +226,13 @@ module.exports = {
                 fd: uploadedFile.fd,
                 size: uploadedFile.size
               }, data))
+              .create(_.merge({
+                name: uploadedBlockMap.filename,
+                hash: '',
+                filetype: '.blockmap',
+                fd: uploadedBlockMap.fd,
+                size: uploadedBlockMap.size
+              }))
               .exec(function created(err, newInstance) {
 
                 // Differentiate between waterline-originated validation errors
