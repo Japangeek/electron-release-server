@@ -337,7 +337,7 @@ angular.module('app.core.data.service', [
             showErrors(response, errorTitle);
           }, function progress(evt) {
             // Math.min is to fix IE which reports 200% sometimes
-            blockAsset.file.progress = Math.min(100, parseInt(100.0 * evt.loaded / evt.total));
+            asset.blockmap.progress = Math.min(100, parseInt(100.0 * evt.loaded / evt.total));
           });
         };
 

@@ -84,7 +84,7 @@ AssetService.getHash = function (fd, type = 'sha1') {
       })
       .on('end', function () {
         hash.end();
-        resolve(hash.digest());
+        resolve(hash.read());
       })
       // Pipe to hash generator
       .pipe(hash);
