@@ -76,6 +76,7 @@ AssetService.getHash = function (fd, type = 'sha1') {
   return new Promise(function (resolve, reject) {
 
     var hash = crypto.createHash(type);
+    hash.setEncoding('hex');
 
     var fileStream = fsx.createReadStream(fd)
       .on('error', function (err) {
