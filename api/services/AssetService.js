@@ -7,6 +7,7 @@
 var mime = require('mime');
 var path = require('path');
 
+var fs = require('fs');
 var fsx = require('fs-extra');
 var crypto = require('crypto');
 var Promise = require('bluebird');
@@ -74,12 +75,15 @@ AssetService.serveFile = function (req, res, asset) {
  */
 AssetService.getHash = function (fd, type = 'sha1') {
   return new Promise(function (resolve, reject) {
-    console.log(fd, type);
     var hash = crypto.createHash(type);
-    var stream = fsx.createReadStream(fd);
+    var stream = fs.createReadStream(fd);
     stream.on('error', err => reject(err));
     stream.on('data', chunk => hash.update(chunk));
-    stream.on('end', () => resolve(hash.digest('base64')));
+    stream.on('end', () => {
+      var result = hash.digest('base64');
+      resolve(result);
+    });
+
 
   });
 };
