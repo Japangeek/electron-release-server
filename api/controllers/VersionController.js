@@ -425,7 +425,7 @@ module.exports = {
             asset.name
           );
 
-          var sha512 = asset.hash ? asset.hash.toLowerCase() : null
+          var sha512 = asset.hash ? asset.hash : null
 
           var latestYml = "version: " + latestVersion.name
             + "\nfiles:"
@@ -501,7 +501,7 @@ module.exports = {
             asset.name
           );
 
-          var sha512 = asset.hash ? asset.hash.toLowerCase() : null
+          var sha512 = asset.hash ? asset.hash : null
 
           var latestYml = "version: " + latestVersion.name
             + "\nfiles:"

@@ -34,7 +34,7 @@ function hashPrerelease(s) {
 }
 
 // Map a semver version to a windows version
-WindowsReleaseService.normVersion = function(tag) {
+WindowsReleaseService.normVersion = function (tag) {
   var parts = new semver.SemVer(tag);
   var prerelease = '';
 
@@ -50,7 +50,7 @@ WindowsReleaseService.normVersion = function(tag) {
 };
 
 // Map a windows version to a semver
-WindowsReleaseService.toSemver = function(tag) {
+WindowsReleaseService.toSemver = function (tag) {
   var parts = tag.split('.');
   var version = parts.slice(0, 3).join('.');
   var prerelease = Number(parts[3]);
@@ -67,11 +67,11 @@ WindowsReleaseService.toSemver = function(tag) {
 
 // Parse RELEASES file
 // https://github.com/Squirrel/Squirrel.Windows/blob/0d1250aa6f0c25fe22e92add78af327d1277d97d/src/Squirrel/ReleaseExtensions.cs#L19
-WindowsReleaseService.parse = function(content) {
+WindowsReleaseService.parse = function (content) {
   return _.chain(stripBom(content))
     .replace('\r\n', '\n')
     .split('\n')
-    .map(function(line) {
+    .map(function (line) {
       var parts = releaseRegex.exec(line);
       if (!parts) return null;
 
@@ -86,7 +86,7 @@ WindowsReleaseService.parse = function(content) {
         .reverse();
 
       var version = _.chain(filenameParts)
-        .filter(function(x) {
+        .filter(function (x) {
           return /^\d+$/.exec(x);
         })
         .reverse()
@@ -107,14 +107,14 @@ WindowsReleaseService.parse = function(content) {
 };
 
 // Generate a RELEASES file
-WindowsReleaseService.generate = function(assets) {
-  return _.map(assets, function(asset) {
-      return [
-        asset.hash,
-        asset.name.replace('-ia32', ''),
-        asset.size
-      ].join(' ');
-    })
+WindowsReleaseService.generate = function (assets) {
+  return _.map(assets, function (asset) {
+    return [
+      asset.hash,
+      asset.name.replace('-ia32', ''),
+      asset.size
+    ].join(' ');
+  })
     .join('\n');
 };
 

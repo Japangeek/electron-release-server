@@ -81,6 +81,7 @@ AssetService.getHash = function (fd, type = 'sha1') {
     stream.on('data', chunk => hash.update(chunk));
     stream.on('end', () => {
       var result = hash.digest('base64');
+      console.log(result);
       resolve(result);
     });
 
