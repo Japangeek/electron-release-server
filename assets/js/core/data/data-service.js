@@ -312,19 +312,19 @@ angular.module('app.core.data.service', [
         var deferred = $q.defer();
 
         if (asset.blockmap) {
-          var blockAssets = {
+          var blockAsset = {
             platform: asset.platform,
             file: asset.blockmap
           }
-          blockAssets.upload = Upload.upload({
+          blockAsset.upload = Upload.upload({
             url: '/api/asset',
             data: _.merge({
               token: AuthService.getToken(),
               version: versionName
-            }, blockAssets)
+            }, blockAsset)
           });
 
-          blockAssets.upload.then(function success(response) {
+          blockAsset.upload.then(function success(response) {
             // Resolve the promise immediately as we already know it succeeded
             deferred.resolve(response);
 
@@ -340,355 +340,350 @@ angular.module('app.core.data.service', [
             showErrors(response, errorTitle);
           }, function progress(evt) {
             // Math.min is to fix IE which reports 200% sometimes
-            blockAssets.file.progress = Math.min(100, parseInt(100.0 * evt.loaded / evt.total));
+            blockAsset.file.progress = Math.min(100, parseInt(100.0 * evt.loaded / evt.total));
+          });
+        };
+
+        asset.upload = Upload.upload({
+          url: '/api/asset',
+          data: _.merge({
+            token: AuthService.getToken(),
+            version: versionName
+          }, asset)
+        });
+
+        asset.upload.then(function success(response) {
+          // Resolve the promise immediately as we already know it succeeded
+          deferred.resolve(response);
+
+          Notification.success({
+            message: 'Asset Created Successfully.'
+          });
+        }, function error(response) {
+          // Reject the promise immediately as we already know it failed
+          deferred.reject(response);
+
+          var errorTitle = 'Unable to Create Asset';
+
+          showErrors(response, errorTitle);
+        }, function progress(evt) {
+          // Math.min is to fix IE which reports 200% sometimes
+          asset.file.progress = Math.min(100, parseInt(100.0 * evt.loaded / evt.total));
+        });
+
+        return deferred.promise;
+      };
+
+      /**
+       * Updates a asset using the api.
+       * Requires authentication (token is auto-injected).
+       * @param  {Object}  asset A object containing all of the parameters we
+       *                         would like to update this asset with.
+       *                         Updating the asset's name is not an issue like
+       *                         with Versions, because assets are identified in
+       *                         the database by their id.
+       * @return {Promise}       A promise which is resolve/rejected as soon as
+       *                         we know the result of the operation
+       *                         Contains the response object.
+       */
+      self.updateAsset = function (asset) {
+        if (!asset) {
+          throw new Error('A asset object is required for updating');
+        }
+        if (!asset.name) {
+          throw new Error('The passed asset object must have been submitted to the database in order to be updated');
+        }
+
+        return $http.post('/api/asset/' + asset.name, asset)
+          .then(function (response) {
+            Notification.success('Asset Updated Successfully.');
+
+            return response;
+          }, function (response) {
+            var errorTitle = 'Unable to Update Asset';
+
+            showErrors(response, errorTitle);
+
+            return $q.reject(response);
+          });
+      };
+
+      /**
+       * Deletes an asset using the api.
+       * Requires authentication (token is auto-injected).
+       * @param  {Object}  name The name of the asset that we would like to
+       *                        delete.
+       * @return {Promise}      A promise which is resolve/rejected as soon
+       *                        as we know the result of the operation
+       *                        Contains the response object.
+       */
+      self.deleteAsset = function (name) {
+        if (!name) {
+          throw new Error('A asset name is required for deletion');
+        }
+
+        return $http.delete('/api/asset/' + name)
+          .then(function success(response) {
+            Notification.success('Asset Deleted Successfully.');
+
+            return response;
+          }, function error(response) {
+            var errorTitle = 'Unable to Delete Asset';
+
+            showErrors(response, errorTitle);
+
+            return $q.reject(response);
+          });
+      };
+
+      /**
+       * Normalize the asset object returned by sails over SocketIO.
+       * Note: Sails will not populate related models on update
+       * Specifically:
+       *  - The version parameter will sometimes only contain the version name.
+       * @param  {Object} asset Unnormalized asset object
+       * @return {Object}       Normalized asset object
+       */
+      var normalizeAsset = function (asset) {
+        if (!asset) {
+          return;
+        }
+
+        if (_.isString(asset.version)) {
+          asset.version = {
+            name: asset.version
+          };
+        }
+
+        return asset;
+      };
+
+      // Process new asset/modified pushed from the server over SocketIO
+      $sails.on('asset', function (msg) {
+        if (!msg) {
+          return;
+        }
+        $log.log('Asset Received', msg);
+
+        asset = normalizeAsset(msg.data);
+
+        if (!asset && msg.verb !== 'destroyed') {
+          $log.log('No asset provided with message. Reloading data.');
+          return self.initialize();
+        }
+
+        var notificationMessage = (asset || {}).name || '';
+
+        var versionIndex, index;
+
+        if (msg.verb === 'created') {
+          versionIndex = _.findIndex(self.data, {
+            name: asset.version.name // Sails sends the version
           });
 
-          return deferred.promise;
-        };
-      }
-
-      console.log(asset);
-
-      asset.upload = Upload.upload({
-        url: '/api/asset',
-        data: _.merge({
-          token: AuthService.getToken(),
-          version: versionName
-        }, asset)
-      });
-
-      asset.upload.then(function success(response) {
-        // Resolve the promise immediately as we already know it succeeded
-        deferred.resolve(response);
-
-        Notification.success({
-          message: 'Asset Created Successfully.'
-        });
-      }, function error(response) {
-        // Reject the promise immediately as we already know it failed
-        deferred.reject(response);
-
-        var errorTitle = 'Unable to Create Asset';
-
-        showErrors(response, errorTitle);
-      }, function progress(evt) {
-        // Math.min is to fix IE which reports 200% sometimes
-        asset.file.progress = Math.min(100, parseInt(100.0 * evt.loaded / evt.total));
-      });
-
-      return deferred.promise;
-    };
-
-/**
- * Updates a asset using the api.
- * Requires authentication (token is auto-injected).
- * @param  {Object}  asset A object containing all of the parameters we
- *                         would like to update this asset with.
- *                         Updating the asset's name is not an issue like
- *                         with Versions, because assets are identified in
- *                         the database by their id.
- * @return {Promise}       A promise which is resolve/rejected as soon as
- *                         we know the result of the operation
- *                         Contains the response object.
- */
-self.updateAsset = function (asset) {
-  if (!asset) {
-    throw new Error('A asset object is required for updating');
-  }
-  if (!asset.name) {
-    throw new Error('The passed asset object must have been submitted to the database in order to be updated');
-  }
-
-  return $http.post('/api/asset/' + asset.name, asset)
-    .then(function (response) {
-      Notification.success('Asset Updated Successfully.');
-
-      return response;
-    }, function (response) {
-      var errorTitle = 'Unable to Update Asset';
-
-      showErrors(response, errorTitle);
-
-      return $q.reject(response);
-    });
-};
-
-/**
- * Deletes an asset using the api.
- * Requires authentication (token is auto-injected).
- * @param  {Object}  name The name of the asset that we would like to
- *                        delete.
- * @return {Promise}      A promise which is resolve/rejected as soon
- *                        as we know the result of the operation
- *                        Contains the response object.
- */
-self.deleteAsset = function (name) {
-  if (!name) {
-    throw new Error('A asset name is required for deletion');
-  }
-
-  return $http.delete('/api/asset/' + name)
-    .then(function success(response) {
-      Notification.success('Asset Deleted Successfully.');
-
-      return response;
-    }, function error(response) {
-      var errorTitle = 'Unable to Delete Asset';
-
-      showErrors(response, errorTitle);
-
-      return $q.reject(response);
-    });
-};
-
-/**
- * Normalize the asset object returned by sails over SocketIO.
- * Note: Sails will not populate related models on update
- * Specifically:
- *  - The version parameter will sometimes only contain the version name.
- * @param  {Object} asset Unnormalized asset object
- * @return {Object}       Normalized asset object
- */
-var normalizeAsset = function (asset) {
-  if (!asset) {
-    return;
-  }
-
-  if (_.isString(asset.version)) {
-    asset.version = {
-      name: asset.version
-    };
-  }
-
-  return asset;
-};
-
-// Process new asset/modified pushed from the server over SocketIO
-$sails.on('asset', function (msg) {
-  if (!msg) {
-    return;
-  }
-  $log.log('Asset Received', msg);
-
-  asset = normalizeAsset(msg.data);
-
-  if (!asset && msg.verb !== 'destroyed') {
-    $log.log('No asset provided with message. Reloading data.');
-    return self.initialize();
-  }
-
-  var notificationMessage = (asset || {}).name || '';
-
-  var versionIndex, index;
-
-  if (msg.verb === 'created') {
-    versionIndex = _.findIndex(self.data, {
-      name: asset.version.name // Sails sends the version
-    });
-
-    if (versionIndex === -1) {
-      // Our version of the database is out of sync from the remote, re-init
-      $log.log('Data out of sync, reloading.');
-      return self.initialize();
-    }
-
-    self.data[versionIndex].assets.unshift(asset);
-
-    Notification({
-      title: 'New Asset Available',
-      message: notificationMessage
-    });
-
-    $log.log('Sails sent a new asset.');
-
-  } else if (msg.verb === 'updated') {
-
-    versionIndex = _.findIndex(self.data, function (version) {
-      index = _.findIndex(version.assets, {
-        name: msg.id // Sails sends back the old id for us
-      });
-
-      return index !== -1;
-    });
-
-    if (versionIndex === -1 || index === -1) {
-      // Our version of the database is out of sync from the remote, re-init
-      $log.log('Data out of sync, reloading.');
-      return self.initialize();
-    }
-
-    self.data[versionIndex].assets[index] = asset;
-
-    Notification({
-      title: 'Asset Updated',
-      message: notificationMessage
-    });
-
-    $log.log('Sails updated an asset.');
-
-  } else if (msg.verb === 'destroyed') {
-
-    versionIndex = _.findIndex(self.data, function (version) {
-      $log.log('Searching Version:', version);
-      index = _.findIndex(version.assets, {
-        name: msg.id // Sails sends back the old id for us
-      });
-      $log.log('result:', index);
-
-      return index !== -1;
-    });
-
-    if (versionIndex === -1 || index === -1) {
-      // Our version of the database is out of sync from remote, re-init
-      $log.log('Data out of sync, reloading.');
-      return self.initialize();
-    }
-
-
-    if (index > -1) {
-      self.data[versionIndex].assets.splice(index, 1);
-    }
-
-    Notification({
-      title: 'Asset Deleted',
-      message: msg.previous.name || ''
-    });
-
-    $log.log('Sails removed an asset.');
-  }
-
-  PubSub.publish('data-change');
-});
-
-/**
- * Retrieve & subscribe to all version, channels & asset data.
- * @return {Promise} Resolved once data has been retrieved
- */
-self.initialize = function () {
-  self.currentPage = 0;
-  self.loading = true;
-  self.hasMore = false;
-
-  return Promise.all([
-    // Get the initial set of releases from the server.
-    // XXX This will also subscribe us to future changes regarding releases
-    $sails.get('/versions/sorted', {
-      page: self.currentPage
-    }),
-
-    // Get available channels
-    $sails.get('/api/channel'),
-
-    // Only sent to watch for asset updates
-    $sails.get('/api/asset')
-  ])
-    .then(function (responses) {
-      versions = responses[0];
-      channels = responses[1];
-      self.data = versions.data.items;
-      self.availableChannels = channels.data.map(function (channel) {
-        return channel.name;
-      });
-
-      self.currentPage++;
-      self.hasMore = versions.data.total > self.data.length;
-      self.loading = false;
-      PubSub.publish('data-change');
-
-      $log.log('Should be subscribed!');
-    });
-};
-
-self.loadMoreVersions = function () {
-  if (self.loading) {
-    return;
-  }
-
-  self.loading = true;
-
-  return $sails.get('/versions/sorted', {
-    page: self.currentPage
-  })
-    .then(function (versions) {
-      self.data = self.data.concat(versions.data.items);
-
-      self.currentPage++;
-      self.hasMore = versions.data.total > self.data.length;
-      self.loading = false;
-      PubSub.publish('data-change');
-    });
-};
-
-/**
- * Returns information about the latest release available for a given
- * platform + architecture and channel.
- * @param  {String} platform Target platform (osx, windows, linux)
- * @param  {Array}  archs    Target architectures ('32', '64')
- * @param  {String} channel  Target release channel
- * @return {Object}          Latest release data object
- */
-self.getLatestReleases = function (platform, archs, channel) {
-  if (!self.availableChannels) {
-    return;
-  }
-
-  var channelIndex = self.availableChannels.indexOf(channel);
-
-  if (channelIndex === -1) {
-    return;
-  }
-
-  var applicableChannels = self.availableChannels.slice(
-    0,
-    channelIndex + 1
-  );
-
-  var versions = _
-    .chain(self.data)
-    .filter(function (version) {
-      var versionChannel = _.get(version, 'channel.name');
-      return applicableChannels.indexOf(versionChannel) !== -1;
-    })
-    .value();
-
-  var latestReleases = {};
-
-  _.forEach(archs, function (arch) {
-    var platformName = platform + '_' + arch;
-
-    var filetypes = self.filetypes[platformName];
-
-    if (!filetypes) {
-      return;
-    }
-    _.forEach(versions, function (version) {
-      _.forEach(version.assets, function (asset) {
-        if (
-          asset.platform === platformName &&
-          filetypes.includes(asset.filetype)
-        ) {
-          var matchedAsset = _.clone(asset);
-          matchedAsset.version = version.name;
-          matchedAsset.notes = version.notes;
-          matchedAsset.channel = _.get(version, 'channel.name');
-          latestReleases[arch] = matchedAsset;
-
-          return false;
+          if (versionIndex === -1) {
+            // Our version of the database is out of sync from the remote, re-init
+            $log.log('Data out of sync, reloading.');
+            return self.initialize();
+          }
+
+          self.data[versionIndex].assets.unshift(asset);
+
+          Notification({
+            title: 'New Asset Available',
+            message: notificationMessage
+          });
+
+          $log.log('Sails sent a new asset.');
+
+        } else if (msg.verb === 'updated') {
+
+          versionIndex = _.findIndex(self.data, function (version) {
+            index = _.findIndex(version.assets, {
+              name: msg.id // Sails sends back the old id for us
+            });
+
+            return index !== -1;
+          });
+
+          if (versionIndex === -1 || index === -1) {
+            // Our version of the database is out of sync from the remote, re-init
+            $log.log('Data out of sync, reloading.');
+            return self.initialize();
+          }
+
+          self.data[versionIndex].assets[index] = asset;
+
+          Notification({
+            title: 'Asset Updated',
+            message: notificationMessage
+          });
+
+          $log.log('Sails updated an asset.');
+
+        } else if (msg.verb === 'destroyed') {
+
+          versionIndex = _.findIndex(self.data, function (version) {
+            $log.log('Searching Version:', version);
+            index = _.findIndex(version.assets, {
+              name: msg.id // Sails sends back the old id for us
+            });
+            $log.log('result:', index);
+
+            return index !== -1;
+          });
+
+          if (versionIndex === -1 || index === -1) {
+            // Our version of the database is out of sync from remote, re-init
+            $log.log('Data out of sync, reloading.');
+            return self.initialize();
+          }
+
+
+          if (index > -1) {
+            self.data[versionIndex].assets.splice(index, 1);
+          }
+
+          Notification({
+            title: 'Asset Deleted',
+            message: msg.previous.name || ''
+          });
+
+          $log.log('Sails removed an asset.');
         }
+
+        PubSub.publish('data-change');
       });
 
-      if (latestReleases[arch]) {
-        return false;
-      }
-    });
-  });
+      /**
+       * Retrieve & subscribe to all version, channels & asset data.
+       * @return {Promise} Resolved once data has been retrieved
+       */
+      self.initialize = function () {
+        self.currentPage = 0;
+        self.loading = true;
+        self.hasMore = false;
 
-  // If no archs matched, return undefined
-  if (_.size(latestReleases) === 0) {
-    return;
-  }
+        return Promise.all([
+          // Get the initial set of releases from the server.
+          // XXX This will also subscribe us to future changes regarding releases
+          $sails.get('/versions/sorted', {
+            page: self.currentPage
+          }),
 
-  return latestReleases;
-};
+          // Get available channels
+          $sails.get('/api/channel'),
+
+          // Only sent to watch for asset updates
+          $sails.get('/api/asset')
+        ])
+          .then(function (responses) {
+            versions = responses[0];
+            channels = responses[1];
+            self.data = versions.data.items;
+            self.availableChannels = channels.data.map(function (channel) {
+              return channel.name;
+            });
+
+            self.currentPage++;
+            self.hasMore = versions.data.total > self.data.length;
+            self.loading = false;
+            PubSub.publish('data-change');
+
+            $log.log('Should be subscribed!');
+          });
+      };
+
+      self.loadMoreVersions = function () {
+        if (self.loading) {
+          return;
+        }
+
+        self.loading = true;
+
+        return $sails.get('/versions/sorted', {
+          page: self.currentPage
+        })
+          .then(function (versions) {
+            self.data = self.data.concat(versions.data.items);
+
+            self.currentPage++;
+            self.hasMore = versions.data.total > self.data.length;
+            self.loading = false;
+            PubSub.publish('data-change');
+          });
+      };
+
+      /**
+       * Returns information about the latest release available for a given
+       * platform + architecture and channel.
+       * @param  {String} platform Target platform (osx, windows, linux)
+       * @param  {Array}  archs    Target architectures ('32', '64')
+       * @param  {String} channel  Target release channel
+       * @return {Object}          Latest release data object
+       */
+      self.getLatestReleases = function (platform, archs, channel) {
+        if (!self.availableChannels) {
+          return;
+        }
+
+        var channelIndex = self.availableChannels.indexOf(channel);
+
+        if (channelIndex === -1) {
+          return;
+        }
+
+        var applicableChannels = self.availableChannels.slice(
+          0,
+          channelIndex + 1
+        );
+
+        var versions = _
+          .chain(self.data)
+          .filter(function (version) {
+            var versionChannel = _.get(version, 'channel.name');
+            return applicableChannels.indexOf(versionChannel) !== -1;
+          })
+          .value();
+
+        var latestReleases = {};
+
+        _.forEach(archs, function (arch) {
+          var platformName = platform + '_' + arch;
+
+          var filetypes = self.filetypes[platformName];
+
+          if (!filetypes) {
+            return;
+          }
+          _.forEach(versions, function (version) {
+            _.forEach(version.assets, function (asset) {
+              if (
+                asset.platform === platformName &&
+                filetypes.includes(asset.filetype)
+              ) {
+                var matchedAsset = _.clone(asset);
+                matchedAsset.version = version.name;
+                matchedAsset.notes = version.notes;
+                matchedAsset.channel = _.get(version, 'channel.name');
+                latestReleases[arch] = matchedAsset;
+
+                return false;
+              }
+            });
+
+            if (latestReleases[arch]) {
+              return false;
+            }
+          });
+        });
+
+        // If no archs matched, return undefined
+        if (_.size(latestReleases) === 0) {
+          return;
+        }
+
+        return latestReleases;
+      };
     }
   ]);
