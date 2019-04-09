@@ -76,20 +76,11 @@ AssetService.getHash = function (fd, type = 'sha1') {
   return new Promise(function (resolve, reject) {
 
     var hash = crypto.createHash(type);
-    hash.setEncoding('base64');
+    var stream = fsx.createReadStream(fd);
+    stream.on('error', err => reject(err));
+    stream.on('data', chunk => hash.update(chunk));
+    stream.on('end', () => resolve(hash.digest('base64')));
 
-    var fileStream = fsx.createReadStream(fd)
-      .on('error', function (err) {
-        reject(err);
-      })
-      .on('end', function () {
-        hash.end();
-        var result = hash.read();
-        console.log(result);
-        resolve(result);
-      })
-      // Pipe to hash generator
-      .pipe(hash);
   });
 };
 
