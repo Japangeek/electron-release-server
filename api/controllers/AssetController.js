@@ -33,7 +33,7 @@ module.exports = {
    * (GET /download/:version/:platform?/:filename?': 'AssetController.download')
    * (GET /download/channel/:channel/:platform?': 'AssetController.download')
    */
-  download: function(req, res) {
+  download: function (req, res) {
     var channel = req.params.channel;
     var version = req.params.version || undefined;
     var filename = req.params.filename;
@@ -70,69 +70,69 @@ module.exports = {
       channel = channel || 'stable';
     }
 
-    var assetPromise = new Promise(function(resolve, reject) {
-        var assetOptions = UtilityService.getTruthyObject({
-          platform: platforms,
-          filetype: filetype
-        });
+    var assetPromise = new Promise(function (resolve, reject) {
+      var assetOptions = UtilityService.getTruthyObject({
+        platform: platforms,
+        filetype: filetype
+      });
 
-        sails.log.debug('Asset requested with options', assetOptions);
+      sails.log.debug('Asset requested with options', assetOptions);
 
-        if (version || channel) {
-          Version
-            .find(UtilityService.getTruthyObject({
-              name: version,
-              channel: channel
-            }))
-            .sort({
-              createdAt: 'desc'
-            })
-            // the latest version maybe has no assets, for example
-            // the moment between creating a version and uploading assets,
-            // so find more than 1 version and use the one containing assets.
-            .limit(10)
-            .populate('assets', assetOptions)
-            .then(function(versions) {
-              if (!versions || !versions.length) {
-                return resolve();
+      if (version || channel) {
+        Version
+          .find(UtilityService.getTruthyObject({
+            name: version,
+            channel: channel
+          }))
+          .sort({
+            createdAt: 'desc'
+          })
+          // the latest version maybe has no assets, for example
+          // the moment between creating a version and uploading assets,
+          // so find more than 1 version and use the one containing assets.
+          .limit(10)
+          .populate('assets', assetOptions)
+          .then(function (versions) {
+            if (!versions || !versions.length) {
+              return resolve();
+            }
+
+            // sort versions by `name` instead of `createdAt`,
+            // an lower version could be deleted then be created again,
+            // thus it has newer `createdAt`.
+            versions = versions.sort(UtilityService.compareVersion);
+            var version = versions[0];
+            var version;
+            for (var i = 0; i < versions.length; i++) {
+              version = versions[i];
+              if (version.assets && version.assets.length) {
+                break;
               }
+            }
 
-              // sort versions by `name` instead of `createdAt`,
-              // an lower version could be deleted then be created again,
-              // thus it has newer `createdAt`.
-              versions = versions.sort(UtilityService.compareVersion);
-              var version = versions[0];
-              var version;
-              for (var i = 0; i < versions.length; i++) {
-                version = versions[i];
-                if (version.assets && version.assets.length) {
-                  break;
-                }
-              }
+            if (!version.assets || !version.assets.length) {
+              return resolve();
+            }
 
-              if (!version.assets || !version.assets.length) {
-                return resolve();
-              }
-
-              // Sorting filename in ascending order prioritizes other files
-              // over zip archives is both are available and matched.
-              return resolve(_.orderBy(
-                version.assets, ['filetype', 'createdAt'], ['asc', 'desc']
-              )[0]);
-            })
-            .catch(reject);
-        } else {
-          Asset
-            .find(assetOptions)
-            .sort({
-              createdAt: 'desc'
-            })
-            .limit(1)
-            .then(resolve)
-            .catch(reject);
-        }
-      })
-      .then(function(asset) {
+            // Sorting filename in ascending order prioritizes other files
+            // over zip archives is both are available and matched.
+            return resolve(_.orderBy(
+              version.assets, ['filetype', 'createdAt'], ['asc', 'desc']
+            )[0]);
+          })
+          .catch(reject);
+      } else {
+        Asset
+          .find(assetOptions)
+          .sort({
+            createdAt: 'desc'
+          })
+          .limit(1)
+          .then(resolve)
+          .catch(reject);
+      }
+    })
+      .then(function (asset) {
         if (!asset || !asset.fd) {
           var noneFoundMessage = 'No download available';
 
@@ -158,7 +158,7 @@ module.exports = {
       .catch(res.negotiate);
   },
 
-  create: function(req, res) {
+  create: function (req, res) {
     // Create data object (monolithic combination of all parameters)
     // Omit the blacklisted params (like JSONP callback param, etc.)
     var data = actionUtil.parseValues(req);
@@ -215,7 +215,7 @@ module.exports = {
         }
 
         hashPromise
-          .then(function(fileHash) {
+          .then(function (fileHash) {
             // Create new instance of model using data from params
             Asset
               .create(_.merge({
@@ -250,7 +250,7 @@ module.exports = {
       });
   },
 
-  destroy: function(req, res) {
+  destroy: function (req, res) {
     var pk = actionUtil.requirePk(req);
 
     var query = Asset.findOne(pk);
@@ -263,9 +263,10 @@ module.exports = {
 
         // Delete the file & remove from db
         return Promise.join(
-            AssetService.destroy(record, req),
-            AssetService.deleteFile(record),
-            function() {})
+          AssetService.destroy(record, req),
+          AssetService.deleteFile(record),
+          AssetService.deleteFile(record + ".blockmap"),
+          function () { })
           .then(function success() {
             res.ok(record);
           });

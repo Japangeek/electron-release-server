@@ -1,10 +1,10 @@
 angular.module('app.core.data.service', [
-    'ngSails'
-  ])
+  'ngSails'
+])
   .service('DataService', [
     '$sails', '$q', '$log', '$http', 'Notification', 'Upload', 'PubSub',
     'AuthService',
-    function(
+    function (
       $sails, $q, $log, $http, Notification, Upload, PubSub,
       AuthService
     ) {
@@ -46,14 +46,14 @@ angular.module('app.core.data.service', [
        * @param  {Object} v2 Version object two
        * @return {-1|0|1}    Whether one is is less than or greater
        */
-      self.compareVersion = function(v1, v2) {
+      self.compareVersion = function (v1, v2) {
         return -compareVersions(v1.name, v2.name);
       };
 
       /**
        * Sort version data in descending order
        */
-      self.sortVersions = function() {
+      self.sortVersions = function () {
         self.data.sort(self.compareVersion);
       };
 
@@ -63,16 +63,16 @@ angular.module('app.core.data.service', [
        * @param  {Object} response A response object returned by sails after a
        *                           erroneous blueprint request.
        */
-      var showAttributeWarnings = function(response) {
+      var showAttributeWarnings = function (response) {
         if (!_.has(response, 'data.invalidAttributes')) {
           return;
         }
 
         _.forEach(response.data.invalidAttributes,
-          function(attribute, attributeName) {
+          function (attribute, attributeName) {
             warningMessage = '';
 
-            _.forEach(attribute, function(attributeError) {
+            _.forEach(attribute, function (attributeError) {
               warningMessage += (attributeError.message || '') + '<br />';
             });
 
@@ -91,7 +91,7 @@ angular.module('app.core.data.service', [
        * @param  {String} errorTitle The string to be used as a title for the
        *                             main error notification.
        */
-      var showErrors = function(response, errorTitle) {
+      var showErrors = function (response, errorTitle) {
         if (!response) {
           return Notification.error({
             title: errorTitle,
@@ -116,17 +116,17 @@ angular.module('app.core.data.service', [
        *                               soon as we know the result of the operation
        *                               Contains the response object.
        */
-      self.createVersion = function(version) {
+      self.createVersion = function (version) {
         if (!version) {
           throw new Error('A version object is required for creation');
         }
 
         return $http.post('/api/version', version)
-          .then(function(response) {
+          .then(function (response) {
             Notification.success('Version Created Successfully.');
 
             return response;
-          }, function(response) {
+          }, function (response) {
 
             var errorTitle = 'Unable to Create Version';
 
@@ -147,7 +147,7 @@ angular.module('app.core.data.service', [
        *                               soon as we know the result of the operation
        *                               Contains the response object.
        */
-      self.updateVersion = function(version, versionName) {
+      self.updateVersion = function (version, versionName) {
         if (!version) {
           throw new Error('A version object is required for updating');
         }
@@ -156,14 +156,14 @@ angular.module('app.core.data.service', [
         }
 
         return $http.post(
-            '/api/version/' + versionName,
-            _.omit(version, ['assets'])
-          )
-          .then(function(response) {
+          '/api/version/' + versionName,
+          _.omit(version, ['assets'])
+        )
+          .then(function (response) {
             Notification.success('Version Updated Successfully.');
 
             return response;
-          }, function(response) {
+          }, function (response) {
             var errorTitle = 'Unable to Update Version';
 
             showErrors(response, errorTitle);
@@ -181,7 +181,7 @@ angular.module('app.core.data.service', [
        *                               soon as we know the result of the operation
        *                               Contains the response object.
        */
-      self.deleteVersion = function(versionName) {
+      self.deleteVersion = function (versionName) {
         if (!versionName) {
           throw new Error('A version name is required for deletion');
         }
@@ -209,7 +209,7 @@ angular.module('app.core.data.service', [
        * @param  {Object} version Unnormalized version object
        * @return {Object}         Normalized version object
        */
-      var normalizeVersion = function(version) {
+      var normalizeVersion = function (version) {
         if (!version) {
           return;
         }
@@ -228,7 +228,7 @@ angular.module('app.core.data.service', [
       };
 
       // Process new versions/modified pushed from the server over SocketIO
-      $sails.on('version', function(msg) {
+      $sails.on('version', function (msg) {
         if (!msg) {
           return;
         }
@@ -301,7 +301,7 @@ angular.module('app.core.data.service', [
        *                               soon as we know the result of the operation
        *                               Contains the response object.
        */
-      self.createAsset = function(asset, versionName) {
+      self.createAsset = function (asset, versionName) {
         if (!asset) {
           throw new Error('A asset object is required for creation');
         }
@@ -338,6 +338,40 @@ angular.module('app.core.data.service', [
           asset.file.progress = Math.min(100, parseInt(100.0 * evt.loaded / evt.total));
         });
 
+        if (assets.blockmap != null) {
+          var blockmapAssets = {
+            platform: assets.platform,
+            file: assets.file
+          }
+
+          blockmapAssets.upload = Upload.upload({
+            url: '/api/asset',
+            data: _.merge({
+              token: AuthService.getToken(),
+              version: versionName
+            }, blockmapAssets)
+          });
+
+          blockmapAssets.upload.then(function success(response) {
+            // Resolve the promise immediately as we already know it succeeded
+            deferred.resolve(response);
+
+            Notification.success({
+              message: 'Blockmap Created Successfully.'
+            });
+          }, function error(response) {
+            // Reject the promise immediately as we already know it failed
+            deferred.reject(response);
+
+            var errorTitle = 'Unable to Create Blockmap';
+
+            showErrors(response, errorTitle);
+          }, function progress(evt) {
+            // Math.min is to fix IE which reports 200% sometimes
+            asset.blockmap.progress = Math.min(100, parseInt(100.0 * evt.loaded / evt.total));
+          });
+        }
+
         return deferred.promise;
       };
 
@@ -353,7 +387,7 @@ angular.module('app.core.data.service', [
        *                         we know the result of the operation
        *                         Contains the response object.
        */
-      self.updateAsset = function(asset) {
+      self.updateAsset = function (asset) {
         if (!asset) {
           throw new Error('A asset object is required for updating');
         }
@@ -362,11 +396,11 @@ angular.module('app.core.data.service', [
         }
 
         return $http.post('/api/asset/' + asset.name, asset)
-          .then(function(response) {
+          .then(function (response) {
             Notification.success('Asset Updated Successfully.');
 
             return response;
-          }, function(response) {
+          }, function (response) {
             var errorTitle = 'Unable to Update Asset';
 
             showErrors(response, errorTitle);
@@ -384,7 +418,7 @@ angular.module('app.core.data.service', [
        *                        as we know the result of the operation
        *                        Contains the response object.
        */
-      self.deleteAsset = function(name) {
+      self.deleteAsset = function (name) {
         if (!name) {
           throw new Error('A asset name is required for deletion');
         }
@@ -411,7 +445,7 @@ angular.module('app.core.data.service', [
        * @param  {Object} asset Unnormalized asset object
        * @return {Object}       Normalized asset object
        */
-      var normalizeAsset = function(asset) {
+      var normalizeAsset = function (asset) {
         if (!asset) {
           return;
         }
@@ -426,7 +460,7 @@ angular.module('app.core.data.service', [
       };
 
       // Process new asset/modified pushed from the server over SocketIO
-      $sails.on('asset', function(msg) {
+      $sails.on('asset', function (msg) {
         if (!msg) {
           return;
         }
@@ -465,7 +499,7 @@ angular.module('app.core.data.service', [
 
         } else if (msg.verb === 'updated') {
 
-          versionIndex = _.findIndex(self.data, function(version) {
+          versionIndex = _.findIndex(self.data, function (version) {
             index = _.findIndex(version.assets, {
               name: msg.id // Sails sends back the old id for us
             });
@@ -490,7 +524,7 @@ angular.module('app.core.data.service', [
 
         } else if (msg.verb === 'destroyed') {
 
-          versionIndex = _.findIndex(self.data, function(version) {
+          versionIndex = _.findIndex(self.data, function (version) {
             $log.log('Searching Version:', version);
             index = _.findIndex(version.assets, {
               name: msg.id // Sails sends back the old id for us
@@ -526,29 +560,29 @@ angular.module('app.core.data.service', [
        * Retrieve & subscribe to all version, channels & asset data.
        * @return {Promise} Resolved once data has been retrieved
        */
-      self.initialize = function() {
+      self.initialize = function () {
         self.currentPage = 0;
         self.loading = true;
         self.hasMore = false;
 
         return Promise.all([
-            // Get the initial set of releases from the server.
-            // XXX This will also subscribe us to future changes regarding releases
-            $sails.get('/versions/sorted', {
-              page: self.currentPage
-            }),
+          // Get the initial set of releases from the server.
+          // XXX This will also subscribe us to future changes regarding releases
+          $sails.get('/versions/sorted', {
+            page: self.currentPage
+          }),
 
-            // Get available channels
-            $sails.get('/api/channel'),
+          // Get available channels
+          $sails.get('/api/channel'),
 
-            // Only sent to watch for asset updates
-            $sails.get('/api/asset')
-          ])
-          .then(function(responses) {
+          // Only sent to watch for asset updates
+          $sails.get('/api/asset')
+        ])
+          .then(function (responses) {
             versions = responses[0];
             channels = responses[1];
             self.data = versions.data.items;
-            self.availableChannels = channels.data.map(function(channel) {
+            self.availableChannels = channels.data.map(function (channel) {
               return channel.name;
             });
 
@@ -561,7 +595,7 @@ angular.module('app.core.data.service', [
           });
       };
 
-      self.loadMoreVersions = function() {
+      self.loadMoreVersions = function () {
         if (self.loading) {
           return;
         }
@@ -571,14 +605,14 @@ angular.module('app.core.data.service', [
         return $sails.get('/versions/sorted', {
           page: self.currentPage
         })
-        .then(function(versions) {
-          self.data = self.data.concat(versions.data.items);
+          .then(function (versions) {
+            self.data = self.data.concat(versions.data.items);
 
-          self.currentPage++;
-          self.hasMore = versions.data.total > self.data.length;
-          self.loading = false;
-          PubSub.publish('data-change');
-        });
+            self.currentPage++;
+            self.hasMore = versions.data.total > self.data.length;
+            self.loading = false;
+            PubSub.publish('data-change');
+          });
       };
 
       /**
@@ -589,7 +623,7 @@ angular.module('app.core.data.service', [
        * @param  {String} channel  Target release channel
        * @return {Object}          Latest release data object
        */
-      self.getLatestReleases = function(platform, archs, channel) {
+      self.getLatestReleases = function (platform, archs, channel) {
         if (!self.availableChannels) {
           return;
         }
@@ -607,7 +641,7 @@ angular.module('app.core.data.service', [
 
         var versions = _
           .chain(self.data)
-          .filter(function(version) {
+          .filter(function (version) {
             var versionChannel = _.get(version, 'channel.name');
             return applicableChannels.indexOf(versionChannel) !== -1;
           })
@@ -615,7 +649,7 @@ angular.module('app.core.data.service', [
 
         var latestReleases = {};
 
-        _.forEach(archs, function(arch) {
+        _.forEach(archs, function (arch) {
           var platformName = platform + '_' + arch;
 
           var filetypes = self.filetypes[platformName];
@@ -623,8 +657,8 @@ angular.module('app.core.data.service', [
           if (!filetypes) {
             return;
           }
-          _.forEach(versions, function(version) {
-            _.forEach(version.assets, function(asset) {
+          _.forEach(versions, function (version) {
+            _.forEach(version.assets, function (asset) {
               if (
                 asset.platform === platformName &&
                 filetypes.includes(asset.filetype)

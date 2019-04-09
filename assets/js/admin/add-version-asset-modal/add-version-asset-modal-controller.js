@@ -1,16 +1,17 @@
 angular.module('app.admin.add-version-asset-modal', [])
   .controller('AddVersionAssetModalController', ['$scope', 'DataService', '$uibModalInstance', 'versionName',
-    function($scope, DataService, $uibModalInstance, versionName) {
+    function ($scope, DataService, $uibModalInstance, versionName) {
       $scope.DataService = DataService;
 
       $scope.versionName = versionName;
 
       $scope.asset = {
         platform: '',
-        file: null
+        file: null,
+        blockmap: null
       };
 
-      $scope.addAsset = function() {
+      $scope.addAsset = function () {
         DataService.createAsset($scope.asset, versionName)
           .then(function success(response) {
             $uibModalInstance.close();
@@ -19,7 +20,7 @@ angular.module('app.admin.add-version-asset-modal', [])
           });
       };
 
-      $scope.closeModal = function() {
+      $scope.closeModal = function () {
         $uibModalInstance.dismiss();
       };
     }
