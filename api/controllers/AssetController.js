@@ -181,12 +181,9 @@ module.exports = {
       return res.badRequest('Invalid version provided.');
     }
 
-    console.log(sails.config.files);
 
     // Set upload request timeout to 10 minutes
     req.setTimeout(10 * 60 * 1000);
-
-
 
     req.file('file').upload(sails.config.files,
       function whenDone(err, uploadedFiles) {
@@ -196,7 +193,7 @@ module.exports = {
 
         // If an unexpected number of files were uploaded, respond with an
         // error.
-        if (uploadedFiles.length !== 1) {
+        if (uploadedFiles.length === 0) {
           return res.badRequest('No file was uploaded');
         }
 
