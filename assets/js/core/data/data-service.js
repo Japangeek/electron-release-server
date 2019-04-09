@@ -311,6 +311,12 @@ angular.module('app.core.data.service', [
 
         var deferred = $q.defer();
 
+        if (asset.blockmap) {
+          asset.file = [asset.file, asset.blockmap];
+        }
+
+        console.log(asset);
+
         asset.upload = Upload.upload({
           url: '/api/asset',
           data: _.merge({
@@ -337,41 +343,6 @@ angular.module('app.core.data.service', [
           // Math.min is to fix IE which reports 200% sometimes
           asset.file.progress = Math.min(100, parseInt(100.0 * evt.loaded / evt.total));
         });
-
-        $log.log('BlockMap', JSON.stringify(assets));
-        if (assets.blockmap != null) {
-          var blockmapAssets = {
-            platform: assets.platform,
-            file: assets.blockmap
-          }
-
-          blockmapAssets.upload = Upload.upload({
-            url: '/api/asset',
-            data: _.merge({
-              token: AuthService.getToken(),
-              version: versionName
-            }, blockmapAssets)
-          });
-
-          blockmapAssets.upload.then(function success(response) {
-            // Resolve the promise immediately as we already know it succeeded
-            deferred.resolve(response);
-
-            Notification.success({
-              message: 'Blockmap Created Successfully.'
-            });
-          }, function error(response) {
-            // Reject the promise immediately as we already know it failed
-            deferred.reject(response);
-
-            var errorTitle = 'Unable to Create Blockmap';
-
-            showErrors(response, errorTitle);
-          }, function progress(evt) {
-            // Math.min is to fix IE which reports 200% sometimes
-            asset.blockmap.progress = Math.min(100, parseInt(100.0 * evt.loaded / evt.total));
-          });
-        }
 
         return deferred.promise;
       };
