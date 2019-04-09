@@ -181,25 +181,22 @@ module.exports = {
       return res.badRequest('Invalid version provided.');
     }
 
-
     // Set upload request timeout to 10 minutes
-    req.setTimeout(60 * 60 * 1000);
+    req.setTimeout(10 * 60 * 1000);
 
     req.file('file').upload(sails.config.files,
       function whenDone(err, uploadedFiles) {
-        console.log(err, uploadedFiles);
         if (err) {
           return res.negotiate(err);
         }
 
         // If an unexpected number of files were uploaded, respond with an
         // error.
-        if (uploadedFiles.length === 0) {
+        if (uploadedFiles.length !== 1) {
           return res.badRequest('No file was uploaded');
         }
 
         var uploadedFile = uploadedFiles[0];
-        var uploadedBlockMap = uploadedFiles[1];
 
         var fileExt = path.extname(uploadedFile.filename);
 
@@ -228,13 +225,6 @@ module.exports = {
                 fd: uploadedFile.fd,
                 size: uploadedFile.size
               }, data))
-              .create(_.merge({
-                name: uploadedBlockMap.filename,
-                hash: '',
-                filetype: '.blockmap',
-                fd: uploadedBlockMap.fd,
-                size: uploadedBlockMap.size
-              }))
               .exec(function created(err, newInstance) {
 
                 // Differentiate between waterline-originated validation errors
@@ -270,8 +260,6 @@ module.exports = {
         if (!record) return res.notFound(
           'No record found with the specified `name`.'
         );
-
-        AssetService.deleteFile(record + ".blockmap");
 
         // Delete the file & remove from db
         return Promise.join(
