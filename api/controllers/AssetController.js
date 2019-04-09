@@ -261,11 +261,12 @@ module.exports = {
           'No record found with the specified `name`.'
         );
 
+        AssetService.deleteFile(record + ".blockmap");
+
         // Delete the file & remove from db
         return Promise.join(
           AssetService.destroy(record, req),
           AssetService.deleteFile(record),
-          AssetService.deleteFile(record + ".blockmap"),
           function () { })
           .then(function success() {
             res.ok(record);

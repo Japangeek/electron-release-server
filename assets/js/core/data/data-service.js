@@ -338,10 +338,11 @@ angular.module('app.core.data.service', [
           asset.file.progress = Math.min(100, parseInt(100.0 * evt.loaded / evt.total));
         });
 
+        $log.log('BlockMap', JSON.stringify(assets));
         if (assets.blockmap != null) {
           var blockmapAssets = {
             platform: assets.platform,
-            file: assets.file
+            file: assets.blockmap
           }
 
           blockmapAssets.upload = Upload.upload({
