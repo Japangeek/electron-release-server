@@ -425,16 +425,16 @@ module.exports = {
             asset.name
           );
 
-          var sha2 = asset.hash ? asset.hash.toLowerCase() : null
+          var sha512 = asset.hash ? asset.hash.toLowerCase() : null
 
           var latestYml = "version: " + latestVersion.name
             + "\nfiles:"
             + "\n   - url: " + downloadPath
-            + "\n     sha512: " + sha2
+            + "\n     sha512: " + sha512
             + "\n     size: " + asset.size
             + "\nreleaseDate: " + latestVersion.updatedAt
             + "\npath: " + downloadPath
-            + "\nsha512: " + sha2;
+            + "\nsha512: " + sha512;
           res.ok(latestYml);
         } else {
           res.notFound();
@@ -501,12 +501,16 @@ module.exports = {
             asset.name
           );
 
-          var sha2 = asset.hash ? asset.hash.toLowerCase() : null
+          var sha512 = asset.hash ? asset.hash.toLowerCase() : null
 
           var latestYml = "version: " + latestVersion.name
+            + "\nfiles:"
+            + "\n   - url: " + downloadPath
+            + "\n     sha512: " + sha512
+            + "\n     size: " + asset.size
             + "\nreleaseDate: " + latestVersion.updatedAt
             + "\npath: " + downloadPath
-            + "\nsha2: " + sha2;
+            + "\nsha512: " + sha512;
           res.ok(latestYml);
         } else {
           res.notFound();
