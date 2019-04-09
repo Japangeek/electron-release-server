@@ -325,15 +325,12 @@ angular.module('app.core.data.service', [
           });
 
           blockAsset.upload.then(function success(response) {
-            // Resolve the promise immediately as we already know it succeeded
-            deferred.resolve(response);
+
 
             Notification.success({
               message: 'BlockMap Created Successfully.'
             });
           }, function error(response) {
-            // Reject the promise immediately as we already know it failed
-            deferred.reject(response);
 
             var errorTitle = 'Unable to Create BlockMap';
 
