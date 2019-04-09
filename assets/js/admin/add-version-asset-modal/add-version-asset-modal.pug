@@ -49,14 +49,14 @@ form(name='assetForm', role='form')
             )
   .modal-footer
     .modal-footer-note.col-md-7
-      span.text-gray(ng-show='!asset.file.progress && !assets.blockmap.progress')
+      span.text-gray(ng-show='!asset.file.progress && !asset.blockmap.progress')
         | This file will be live once uploaded.
       uib-progressbar.progress-striped.active(
         type="success"
-        value='(asset.file.progress+assets.blockmap.progress)/2',
-        ng-show='asset.file.progress >= 0 || assets.blockmap.progress >= 0'
+        value='(asset.file.progress+asset.blockmap.progress)/2',
+        ng-show='asset.file.progress >= 0 || asset.blockmap.progress >= 0'
         )
-        strong {{ (asset.file.progress+assets.blockmap.progress)/2 }}%
+        strong {{ (asset.file.progress+asset.blockmap.progress)/2 }}%
     div
       button.btn.btn-warning(type='button', ng-disabled="!assetForm.$valid" ng-click='addAsset()') Upload
       button.btn.btn-danger(type='button', ng-click='closeModal()') Cancel
