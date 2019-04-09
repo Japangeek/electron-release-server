@@ -431,7 +431,7 @@ module.exports = {
             + "\nfiles:"
             + "\n   - url: " + downloadPath
             + "\n    sha512: " + sha2
-            + "\n    size: " + latestVersion.size
+            + "\n    size: " + asset.size
             + "\nreleaseDate: " + latestVersion.updatedAt
             + "\npath: " + downloadPath
             + "\nsha2: " + sha2;
