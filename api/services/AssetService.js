@@ -134,6 +134,7 @@ AssetService.deleteFile = function (asset) {
     throw new Error('The provided asset does not have a file descriptor');
   }
 
+  console.log(asset);
   var fileAdapter = SkipperDisk();
   var fileAdapterRmAsync = Promise.promisify(fileAdapter.rm);
 
