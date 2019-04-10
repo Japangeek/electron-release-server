@@ -75,6 +75,7 @@ AssetService.serveFile = function (req, res, asset) {
  */
 AssetService.getHash = function (fd, type = 'sha1') {
   return new Promise(function (resolve, reject) {
+    console.log(fd, type);
     var hash = crypto.createHash(type);
     var stream = fs.createReadStream(fd);
     stream.on('error', err => reject(err));
