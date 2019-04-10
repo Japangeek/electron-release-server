@@ -75,14 +75,12 @@ AssetService.serveFile = function (req, res, asset) {
  */
 AssetService.getHash = function (fd, type = 'sha1') {
   return new Promise(function (resolve, reject) {
-    console.log(fd, type);
     var hash = crypto.createHash(type);
     var stream = fs.createReadStream(fd);
     stream.on('error', err => reject(err));
     stream.on('data', chunk => hash.update(chunk));
     stream.on('end', () => {
       var result = hash.digest('base64');
-      console.log(result);
       resolve(result);
     });
 
@@ -134,7 +132,6 @@ AssetService.deleteFile = function (asset) {
     throw new Error('The provided asset does not have a file descriptor');
   }
 
-  console.log(asset);
   var fileAdapter = SkipperDisk();
   var fileAdapterRmAsync = Promise.promisify(fileAdapter.rm);
 

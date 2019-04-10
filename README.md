@@ -1,3 +1,22 @@
+# NOTE FORK
+This is a fork from **ArekSredzki**, but this works best for NSIS Installer & for electron-builder.
+
+## Tested Electrons:
+electron 3.0.2 (this really doesn't matter actually)
+electron-updater 4.0.6
+electron-builder 20.39.0
+
+## Tested NSIS
+NSIS
+
+## TESTED OS
+Windows 64
+
+## Untested NSIS
+NSIS-Web (please let me know if this works)
+
+**Original Readme:**
+
 # Electron Release Server
 [![GitHub stars](https://img.shields.io/github/stars/ArekSredzki/electron-release-server.svg)](https://github.com/ArekSredzki/electron-release-server/stargazers)
 [![GitHub forks](https://img.shields.io/github/forks/ArekSredzki/electron-release-server.svg)](https://github.com/ArekSredzki/electron-release-server/network)
